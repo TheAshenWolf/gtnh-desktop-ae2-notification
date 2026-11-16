@@ -1,0 +1,18 @@
+ae2desktopping.alert.title=AE2 craft finished
+ae2desktopping.alert.finished=%s × %s finished in %s.
+ae2desktopping.alert.test=Test alert from /ae2ping test.
+
+ae2desktopping.button.ping_me.title=Ping me on Discord
+ae2desktopping.button.ping_me.help=Start and follow pings you when it finishes. Stays on until the game closes.
+ae2desktopping.button.ping_here.title=Ping @here on Discord
+ae2desktopping.button.ping_here.help=This craft only: Start and follow pings @here when it finishes.
+ae2desktopping.button.on=§aON
+ae2desktopping.button.off=§cOFF
+ae2desktopping.button.not_configured=§7Set discord.webhookUrl and discord.userId in config/ae2desktopping.cfg, then /ae2ping reload.
+
+ae2desktopping.chat.reloaded=AE2 Desktop Ping: config reloaded.
+ae2desktopping.chat.status_ready=AE2 Desktop Ping: Discord is set up.
+ae2desktopping.chat.discord_not_ready=AE2 Desktop Ping: Discord is not set up (webhookUrl / userId missing or invalid).
+ae2desktopping.chat.status_flags=Crafts waiting to ping: %s. Ping me toggle: %s.
+ae2desktopping.chat.test_desktop=Desktop alert in 5 seconds: switch to another window to see it.
+ae2desktopping.chat.test_discord=Discord test message sent.

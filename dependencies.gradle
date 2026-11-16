@@ -1,0 +1,12 @@
+// Versions match the GTNH 2.9 modpack.
+// LWJGL 3 / SDL (shipped through lwjgl3ify) is reached by reflection, so it isn't a compile dependency.
+dependencies {
+    compileOnly("com.github.GTNewHorizons:Applied-Energistics-2-Unofficial:rv3-beta-1095-GTNH:dev") { transitive = false }
+}
+
+// Smoke-test client: AE2 plus the GTNHLib the pack ships. AE2 isn't transitive here: its own dependency chain pulls
+// GTNHExtLib 1.0.4, which Windows Defender quarantines on download; GTNHLib 0.11.54 brings 1.0.5 (the pack's version).
+dependencies {
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:Applied-Energistics-2-Unofficial:rv3-beta-1095-GTNH:dev") { transitive = false }
+    runtimeOnlyNonPublishable("com.github.GTNewHorizons:GTNHLib:0.11.54:dev")
+}
