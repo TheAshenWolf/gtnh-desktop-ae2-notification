@@ -23,22 +23,23 @@ import appeng.client.gui.widgets.GuiAeButton;
 import appeng.container.implementations.ContainerCraftConfirm;
 
 /**
- * Two toggles left of AE2's "save as image" button on the crafting plan screen:
+ * Two toggles on the crafting plan screen, one row above AE2's "save as image" and "terminal style" buttons:
  * <ul>
- * <li>Ping on Discord: stays as set until the game closes.</li>
- * <li>Ping @here: off every time a plan opens and after each start; turning it on implies a Discord ping.</li>
+ * <li>Ping me on Discord (above save as image): stays as set until the game closes.</li>
+ * <li>Ping @here (above terminal style): needs the first one on; off every time a plan opens.</li>
  * </ul>
- * "Start and follow" with either on flags the craft for a Discord ping.
+ * Every "Start and follow" records the decision for its item and amount, see {@link DiscordFlags#recordFollow}.
  */
 @Mixin(GuiCraftConfirm.class)
 public abstract class MixinGuiCraftConfirm extends GuiContainer {
 
+    /** AE2 puts terminal style at guiLeft - 18 and save as image at guiLeft - 36, 18 above the bottom edge. */
     @Unique
-    private static final int AE2DESKTOPPING$BUTTON_SPACING = 18;
+    private static final int AE2DESKTOPPING$PING_ME_X = -36;
     @Unique
-    private static final int AE2DESKTOPPING$PING_ME_X = -54;
+    private static final int AE2DESKTOPPING$PING_HERE_X = -18;
     @Unique
-    private static final int AE2DESKTOPPING$BUTTON_Y_FROM_BOTTOM = 18;
+    private static final int AE2DESKTOPPING$Y_FROM_BOTTOM = 36;
 
     @Shadow(remap = false)
     @Final
@@ -63,11 +64,10 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
 
     @Inject(method = "initGui", at = @At("TAIL"))
     private void ae2desktopping$addToggles(CallbackInfo callback) {
-        final int y = guiTop + ySize - AE2DESKTOPPING$BUTTON_Y_FROM_BOTTOM;
-        final int pingMeX = guiLeft + AE2DESKTOPPING$PING_ME_X;
+        final int y = guiTop + ySize - AE2DESKTOPPING$Y_FROM_BOTTOM;
 
-        ae2desktopping$pingMeButton = new ToggleIconButton(0, pingMeX, y, 0, 16);
-        ae2desktopping$pingHereButton = new ToggleIconButton(0, pingMeX - AE2DESKTOPPING$BUTTON_SPACING, y, 32, 48);
+        ae2desktopping$pingMeButton = new ToggleIconButton(0, guiLeft + AE2DESKTOPPING$PING_ME_X, y, 0, 16);
+        ae2desktopping$pingHereButton = new ToggleIconButton(0, guiLeft + AE2DESKTOPPING$PING_HERE_X, y, 32, 48);
         buttonList.add(ae2desktopping$pingMeButton);
         buttonList.add(ae2desktopping$pingHereButton);
         ae2desktopping$refreshToggles();
@@ -76,33 +76,37 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
     private void ae2desktopping$onButton(GuiButton button, CallbackInfo callback) {
         if (button == ae2desktopping$pingMeButton) {
-            DiscordFlags.setPingMeToggle(!DiscordFlags.isPingMeToggleOn());
+            final boolean pingMe = !DiscordFlags.isPingMeToggleOn();
+            DiscordFlags.setPingMeToggle(pingMe);
+
+            if (!pingMe) {
+                ae2desktopping$pingHere = false;
+            }
+
             ae2desktopping$refreshToggles();
             callback.cancel();
             return;
         }
 
         if (button == ae2desktopping$pingHereButton) {
-            ae2desktopping$pingHere = !ae2desktopping$pingHere;
+            ae2desktopping$pingHere = !ae2desktopping$pingHere && DiscordFlags.isPingMeToggleOn();
             ae2desktopping$refreshToggles();
             callback.cancel();
             return;
         }
 
-        if (button != startWithFollow || !PingConfig.isDiscordReady()) {
+        if (button != startWithFollow) {
             return;
         }
 
-        final boolean pingHere = ae2desktopping$pingHere;
+        final boolean ready = PingConfig.isDiscordReady();
+        final boolean pingMe = ready && DiscordFlags.isPingMeToggleOn();
+        final boolean pingHere = pingMe && ae2desktopping$pingHere;
         ae2desktopping$pingHere = false;
-
-        if (!pingHere && !DiscordFlags.isPingMeToggleOn()) {
-            return;
-        }
 
         try {
             final IAEStack<?> output = ccc.getItemToCraft();
-            DiscordFlags.flag(output, pingHere);
+            DiscordFlags.recordFollow(output, pingMe, pingHere);
         } catch (RuntimeException exception) {
             AE2DesktopPing.LOG.error("Could not read which item this craft makes; no Discord ping for it.", exception);
         }
@@ -115,29 +119,41 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
         }
 
         final boolean ready = PingConfig.isDiscordReady();
-        final boolean pingMe = DiscordFlags.isPingMeToggleOn();
+        final boolean pingMe = ready && DiscordFlags.isPingMeToggleOn();
+
+        if (!pingMe) {
+            ae2desktopping$pingHere = false;
+        }
 
         ae2desktopping$pingMeButton.enabled = ready;
-        ae2desktopping$pingHereButton.enabled = ready;
-        ae2desktopping$pingMeButton.setOn(ready && pingMe);
-        ae2desktopping$pingHereButton.setOn(ready && ae2desktopping$pingHere);
+        ae2desktopping$pingHereButton.enabled = pingMe;
+        ae2desktopping$pingMeButton.setOn(pingMe);
+        ae2desktopping$pingHereButton.setOn(ae2desktopping$pingHere);
+
+        final String pingMeTitle = I18n.format("ae2desktopping.button.ping_me.title");
+        final String pingHereTitle = I18n.format("ae2desktopping.button.ping_here.title");
 
         if (!ready) {
             final String notReady = I18n.format("ae2desktopping.button.not_configured");
-            ae2desktopping$pingMeButton
-                .setTooltip(I18n.format("ae2desktopping.button.ping_me.title") + "\n" + notReady);
-            ae2desktopping$pingHereButton
-                .setTooltip(I18n.format("ae2desktopping.button.ping_here.title") + "\n" + notReady);
+            ae2desktopping$pingMeButton.setTooltip(pingMeTitle + "\n" + notReady);
+            ae2desktopping$pingHereButton.setTooltip(pingHereTitle + "\n" + notReady);
             return;
         }
 
         ae2desktopping$pingMeButton.setTooltip(
-            I18n.format("ae2desktopping.button.ping_me.title") + "\n"
+            pingMeTitle + "\n"
                 + I18n.format(pingMe ? "ae2desktopping.button.on" : "ae2desktopping.button.off")
                 + "\n"
                 + I18n.format("ae2desktopping.button.ping_me.help"));
+
+        if (!pingMe) {
+            ae2desktopping$pingHereButton
+                .setTooltip(pingHereTitle + "\n" + I18n.format("ae2desktopping.button.ping_here.needs_ping_me"));
+            return;
+        }
+
         ae2desktopping$pingHereButton.setTooltip(
-            I18n.format("ae2desktopping.button.ping_here.title") + "\n"
+            pingHereTitle + "\n"
                 + I18n.format(ae2desktopping$pingHere ? "ae2desktopping.button.on" : "ae2desktopping.button.off")
                 + "\n"
                 + I18n.format("ae2desktopping.button.ping_here.help"));

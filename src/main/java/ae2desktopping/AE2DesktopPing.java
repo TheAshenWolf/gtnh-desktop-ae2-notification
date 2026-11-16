@@ -15,6 +15,7 @@ import cpw.mods.fml.relauncher.Side;
     name = "AE2 Desktop Ping",
     version = Tags.VERSION,
     acceptableRemoteVersions = "*",
+    guiFactory = "ae2desktopping.client.gui.PingGuiFactory",
     dependencies = "required-after:appliedenergistics2")
 public class AE2DesktopPing {
 

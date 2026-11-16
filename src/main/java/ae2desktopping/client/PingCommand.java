@@ -7,10 +7,10 @@ import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentTranslation;
 
-/** Client-side /ae2ping: status, reload (re-reads the config), test. */
+/** Client-side /ae2ping: status, config (opens the config screen), reload (re-reads the file), test. */
 public final class PingCommand extends CommandBase {
 
-    private static final String[] SUBCOMMANDS = { "status", "reload", "test" };
+    private static final String[] SUBCOMMANDS = { "status", "config", "reload", "test" };
 
     @Override
     public String getCommandName() {
@@ -19,7 +19,7 @@ public final class PingCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/ae2ping <status|reload|test>";
+        return "/ae2ping <status|config|reload|test>";
     }
 
     @Override
@@ -36,8 +36,14 @@ public final class PingCommand extends CommandBase {
     public void processCommand(ICommandSender sender, String[] arguments) {
         final String subcommand = arguments.length == 0 ? "status" : arguments[0];
 
+        if ("config".equalsIgnoreCase(subcommand)) {
+            // The chat screen closes after this command runs, so open the config screen on the next tick.
+            ClientTicker.openConfigNextTick();
+            return;
+        }
+
         if ("reload".equalsIgnoreCase(subcommand)) {
-            PingConfig.reload();
+            PingConfig.reloadFromDisk();
             sender.addChatMessage(new ChatComponentTranslation("ae2desktopping.chat.reloaded"));
             sendStatus(sender);
             return;

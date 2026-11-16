@@ -18,13 +18,18 @@ Built against AE2 rv3-beta-1095-GTNH. Desktop alerts need Windows; the taskbar f
 
 ## The toggles
 
-Two buttons left of AE2's "save as image" button on the crafting plan screen:
+Two buttons on the crafting plan screen, one row above AE2's "save as image" and "terminal style" buttons:
 
 - **Bell (ping me):** stays as you set it until the game closes. Starts off every launch.
-- **Team (ping @here):** off every time a plan screen opens, so it has to be switched on for each craft.
-  Turning it on is enough: the craft pings @here and you, whatever the bell says.
+- **Team (ping @here):** only clickable while the bell is on. Off every time a plan screen opens, so it has to be
+  switched on for each craft.
 
 Both are greyed out until Discord is set up.
+
+Every **Start and follow** records the choice for that item and amount, and a newer choice replaces an older one for
+the same item and amount. A finished craft is matched by item and amount only, so this keeps a cancelled craft's
+choice from applying to a later identical craft. A craft merged into one already running finishes with the combined
+amount and doesn't ping.
 
 ## What is deliberately not alerted
 
@@ -35,7 +40,8 @@ Both are greyed out until Discord is set up.
 
 ## Config
 
-`config/ae2desktopping.cfg`. After editing, `/ae2ping reload` applies it without a restart.
+In game: **Mods → AE2 Desktop Ping → Config**, **Mod Options** in the pause menu, or `/ae2ping config`.
+Changes apply when you click Done. The file is `config/ae2desktopping.cfg`; after editing it by hand, `/ae2ping reload`.
 
 | Key | Default | |
 | --- | --- | --- |
@@ -50,7 +56,8 @@ The webhook URL is a secret: anyone who has it can post in that channel. Don't s
 ## Commands
 
 - `/ae2ping` or `/ae2ping status`: is Discord set up, how many crafts are waiting to ping, bell state.
-- `/ae2ping reload`: re-read the config.
+- `/ae2ping config`: open the config screen.
+- `/ae2ping reload`: re-read the config file after editing it by hand.
 - `/ae2ping test`: desktop alert in 5 seconds (switch windows to see it) and a test message that pings only you.
 
 ## Safety

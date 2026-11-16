@@ -7,6 +7,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
 
 import ae2desktopping.AE2DesktopPing;
+import ae2desktopping.client.gui.PingConfigGui;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent;
@@ -28,6 +29,7 @@ public final class ClientTicker {
     private static long worldJoinedAtNanos = System.nanoTime();
     private static boolean hadWorld;
     private static int testCountdownTicks = -1;
+    private static boolean openConfig;
 
     @SubscribeEvent
     public void onClientConnected(FMLNetworkEvent.ClientConnectedToServerEvent event) {
@@ -55,6 +57,12 @@ public final class ClientTicker {
             completion = CraftCompletions.poll();
         }
 
+        if (openConfig) {
+            openConfig = false;
+            Minecraft.getMinecraft()
+                .displayGuiScreen(new PingConfigGui(null));
+        }
+
         if (testCountdownTicks > 0) {
             testCountdownTicks--;
 
@@ -64,6 +72,11 @@ public final class ClientTicker {
                     .alert(I18n.format("ae2desktopping.alert.title"), I18n.format("ae2desktopping.alert.test"), true);
             }
         }
+    }
+
+    /** Opens the config screen once the chat screen that ran /ae2ping config has closed. */
+    static void openConfigNextTick() {
+        openConfig = true;
     }
 
     /** Fires the desktop alert a few seconds from now, so there is time to switch away from the game. */
@@ -80,11 +93,15 @@ public final class ClientTicker {
             }
 
             final String itemName = EnumChatFormatting.getTextWithoutFormattingCodes(completion.stack.getDisplayName());
-            final String elapsed = TimeFormat.formatElapsed(completion.elapsedNanos);
+            final String elapsed = TextFormat.formatElapsed(completion.elapsedNanos);
 
             DesktopAlert.alert(
                 I18n.format("ae2desktopping.alert.title"),
-                I18n.format("ae2desktopping.alert.finished", completion.count, itemName, elapsed),
+                I18n.format(
+                    "ae2desktopping.alert.finished",
+                    TextFormat.formatCount(completion.count),
+                    itemName,
+                    elapsed),
                 false);
 
             if (match != DiscordFlags.Match.NONE) {

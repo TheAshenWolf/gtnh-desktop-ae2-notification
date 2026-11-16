@@ -124,11 +124,11 @@ public final class DiscordWebhook {
 
         final String mentions = pingHere ? "@here <@" + PingConfig.userId + ">" : "<@" + PingConfig.userId + ">";
         final String content = mentions + " AE2 craft finished: **"
-            + count
+            + TextFormat.formatCount(count)
             + " × "
             + sanitize(itemName)
             + "** in "
-            + TimeFormat.formatElapsed(elapsedNanos)
+            + TextFormat.formatElapsed(elapsedNanos)
             + ".";
 
         queue(PingConfig.webhookUrl, buildPayload(content, PingConfig.userId, pingHere));

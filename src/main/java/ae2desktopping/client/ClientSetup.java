@@ -15,6 +15,9 @@ public final class ClientSetup {
         FMLCommonHandler.instance()
             .bus()
             .register(new ClientTicker());
+        FMLCommonHandler.instance()
+            .bus()
+            .register(new PingConfig());
         ClientCommandHandler.instance.registerCommand(new PingCommand());
     }
 }

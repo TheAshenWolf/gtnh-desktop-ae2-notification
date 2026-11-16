@@ -5,14 +5,23 @@ ae2desktopping.alert.test=Test alert from /ae2ping test.
 ae2desktopping.button.ping_me.title=Ping me on Discord
 ae2desktopping.button.ping_me.help=Start and follow pings you when it finishes. Stays on until the game closes.
 ae2desktopping.button.ping_here.title=Ping @here on Discord
-ae2desktopping.button.ping_here.help=This craft only: Start and follow pings @here when it finishes.
+ae2desktopping.button.ping_here.help=This craft only: Start and follow also pings @here when it finishes.
+ae2desktopping.button.ping_here.needs_ping_me=§7Turn on Ping me on Discord first.
 ae2desktopping.button.on=§aON
 ae2desktopping.button.off=§cOFF
-ae2desktopping.button.not_configured=§7Set discord.webhookUrl and discord.userId in config/ae2desktopping.cfg, then /ae2ping reload.
+ae2desktopping.button.not_configured=§7Set the Discord webhook URL and user ID: /ae2ping config
 
-ae2desktopping.chat.reloaded=AE2 Desktop Ping: config reloaded.
+ae2desktopping.config.desktop=Desktop
+ae2desktopping.config.discord=Discord
+ae2desktopping.config.flashTaskbar=Flash taskbar
+ae2desktopping.config.windowsNotification=Windows notification
+ae2desktopping.config.onlyWhenUnfocused=Only when the game isn't focused
+ae2desktopping.config.webhookUrl=Webhook URL
+ae2desktopping.config.userId=Discord user ID
+
+ae2desktopping.chat.reloaded=AE2 Desktop Ping: config reloaded from disk.
 ae2desktopping.chat.status_ready=AE2 Desktop Ping: Discord is set up.
-ae2desktopping.chat.discord_not_ready=AE2 Desktop Ping: Discord is not set up (webhookUrl / userId missing or invalid).
+ae2desktopping.chat.discord_not_ready=AE2 Desktop Ping: Discord is not set up (webhook URL / user ID missing or invalid). /ae2ping config
 ae2desktopping.chat.status_flags=Crafts waiting to ping: %s. Ping me toggle: %s.
 ae2desktopping.chat.test_desktop=Desktop alert in 5 seconds: switch to another window to see it.
 ae2desktopping.chat.test_discord=Discord test message sent.

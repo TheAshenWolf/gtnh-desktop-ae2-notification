@@ -9,7 +9,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import appeng.api.storage.data.IAEStack;
 
 /**
- * Crafts started with "Start and follow" while a Discord toggle was on. Memory only: closing the game forgets them.
+ * Crafts started with "Start and follow" while the Discord toggle was on. Memory only: closing the game forgets them.
  * Only a craft flagged here can ping, so a server can't trigger pings for crafts you never flagged.
  * Client thread only.
  */
@@ -54,8 +54,26 @@ public final class DiscordFlags {
         pingMeToggle = on;
     }
 
-    public static void flag(IAEStack<?> output, boolean pingHere) {
+    /**
+     * Called on every "Start and follow". A finished craft is only known by its item and amount, so a flag left by a
+     * craft that never finished (cancelled, failed to start) would match a later identical craft. The newest decision
+     * for an item and amount therefore replaces any older one, whether it pings or not.
+     */
+    public static void recordFollow(IAEStack<?> output, boolean pingMe, boolean pingHere) {
         if (output == null) {
+            return;
+        }
+
+        final String server = currentServer();
+        final long count = output.getStackSize();
+        int index = indexOf(server, output, count);
+
+        while (index >= 0) {
+            FLAGGED.remove(index);
+            index = indexOf(server, output, count);
+        }
+
+        if (!pingMe) {
             return;
         }
 
@@ -63,36 +81,15 @@ public final class DiscordFlags {
             FLAGGED.remove(0);
         }
 
-        FLAGGED.add(new FlaggedCraft(currentServer(), output.copy(), output.getStackSize(), pingHere));
+        FLAGGED.add(new FlaggedCraft(server, output.copy(), count, pingHere));
     }
 
     /**
-     * Finds and removes the flag for a finished craft. An exact count match wins; otherwise the oldest flag for the
-     * same item (merged crafts finish with a different count).
+     * Finds and removes the flag for a finished craft: same server, item and amount. A craft merged into another
+     * finishes with the combined amount, so it matches nothing and doesn't ping.
      */
     public static Match consume(IAEStack<?> output, long count) {
-        final String server = currentServer();
-        int sameTypeIndex = -1;
-        int exactIndex = -1;
-
-        for (int i = 0, size = FLAGGED.size(); i < size; i++) {
-            final FlaggedCraft flagged = FLAGGED.get(i);
-
-            if (!flagged.server.equals(server) || !flagged.output.isSameType(output)) {
-                continue;
-            }
-
-            if (sameTypeIndex < 0) {
-                sameTypeIndex = i;
-            }
-
-            if (flagged.count == count) {
-                exactIndex = i;
-                break;
-            }
-        }
-
-        final int index = exactIndex >= 0 ? exactIndex : sameTypeIndex;
+        final int index = indexOf(currentServer(), output, count);
 
         if (index < 0) {
             return Match.NONE;
@@ -100,6 +97,18 @@ public final class DiscordFlags {
 
         final FlaggedCraft removed = FLAGGED.remove(index);
         return removed.pingHere ? Match.PING_HERE : Match.PING_ME;
+    }
+
+    private static int indexOf(String server, IAEStack<?> output, long count) {
+        for (int i = 0, size = FLAGGED.size(); i < size; i++) {
+            final FlaggedCraft flagged = FLAGGED.get(i);
+
+            if (flagged.count == count && flagged.server.equals(server) && flagged.output.isSameType(output)) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public static int flaggedCount() {
