@@ -8,12 +8,19 @@ import java.awt.RenderingHints;
 import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import javax.imageio.ImageIO;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.util.ResourceLocation;
 
 import ae2desktopping.AE2DesktopPing;
 
@@ -28,7 +35,10 @@ import ae2desktopping.AE2DesktopPing;
  */
 public final class DesktopAlert {
 
-    private static final String TRAY_TOOLTIP = "AE2 Desktop Ping";
+    private static final String TRAY_TOOLTIP = "GregTech: New Horizons";
+    private static final ResourceLocation PACK_ICON = new ResourceLocation(
+        "dreamcraft",
+        "textures/icon/GTNH_256x256.png");
     private static final int MAX_QUEUED_NOTIFICATIONS = 8;
 
     private static final ThreadPoolExecutor NOTIFIER = new ThreadPoolExecutor(
@@ -49,6 +59,7 @@ public final class DesktopAlert {
     private static Method flashWindowMethod;
     private static int flashUntilFocused;
 
+    private static BufferedImage trayImage;
     private static boolean trayFailed;
     private static TrayIcon trayIcon;
 
@@ -65,7 +76,33 @@ public final class DesktopAlert {
         }
 
         if (PingConfig.windowsNotification && isWindows()) {
-            NOTIFIER.execute(() -> showNotification(title, message));
+            final BufferedImage image = getTrayImage();
+            NOTIFIER.execute(() -> showNotification(title, message, image));
+        }
+    }
+
+    /** Client thread: the resource manager isn't thread-safe. Loaded once. */
+    private static BufferedImage getTrayImage() {
+        if (trayImage == null) {
+            trayImage = loadPackIcon();
+
+            if (trayImage == null) {
+                trayImage = createFallbackIcon();
+            }
+        }
+
+        return trayImage;
+    }
+
+    /** The GTNH logo shipped by the pack's core mod (dreamcraft); null when that mod isn't there. */
+    private static BufferedImage loadPackIcon() {
+        try (InputStream input = Minecraft.getMinecraft()
+            .getResourceManager()
+            .getResource(PACK_ICON)
+            .getInputStream()) {
+            return ImageIO.read(input);
+        } catch (IOException | RuntimeException exception) {
+            return null;
         }
     }
 
@@ -122,8 +159,11 @@ public final class DesktopAlert {
         }
     }
 
-    /** Notifier thread. */
-    private static void showNotification(String title, String message) {
+    /**
+     * Notifier thread. Windows uses the tray icon as the toast's header icon. The header text is the process name
+     * (javaw.exe calls itself "OpenJDK Platform binary"); MessageType.NONE drops the generic "i" badge.
+     */
+    private static void showNotification(String title, String message, BufferedImage image) {
         if (trayFailed) {
             return;
         }
@@ -135,14 +175,14 @@ public final class DesktopAlert {
                     return;
                 }
 
-                final TrayIcon icon = new TrayIcon(createIcon(), TRAY_TOOLTIP);
+                final TrayIcon icon = new TrayIcon(image, TRAY_TOOLTIP);
                 icon.setImageAutoSize(true);
                 SystemTray.getSystemTray()
                     .add(icon);
                 trayIcon = icon;
             }
 
-            trayIcon.displayMessage(title, message, TrayIcon.MessageType.INFO);
+            trayIcon.displayMessage(title, message, TrayIcon.MessageType.NONE);
         } catch (AWTException | RuntimeException | LinkageError exception) {
             trayFailed = true;
             AE2DesktopPing.LOG
@@ -150,7 +190,7 @@ public final class DesktopAlert {
         }
     }
 
-    private static BufferedImage createIcon() {
+    private static BufferedImage createFallbackIcon() {
         final int size = 16;
         final BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
         final Graphics2D graphics = image.createGraphics();

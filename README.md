@@ -12,7 +12,7 @@ Built against AE2 rv3-beta-1095-GTNH. Desktop alerts need Windows; the taskbar f
 | Alert | When |
 | --- | --- |
 | Taskbar flash | Every followed craft, while the game window isn't focused. Flashes until you click back in. |
-| Windows notification | Same, as a toast from the system tray icon "AE2 Desktop Ping". |
+| Windows notification | Same, as a toast with the GTNH logo (loaded from the pack's core mod at runtime). |
 | Discord ping (you) | Only crafts started with **Start and follow** while the bell toggle was on. |
 | Discord ping (@here) | Only crafts started with **Start and follow** while the team toggle was on. |
 
@@ -20,8 +20,8 @@ Built against AE2 rv3-beta-1095-GTNH. Desktop alerts need Windows; the taskbar f
 
 Two buttons on the crafting plan screen, one row above AE2's "save as image" and "terminal style" buttons:
 
-- **Bell (ping me):** stays as you set it until the game closes. Starts off every launch.
-- **Team (ping @here):** only clickable while the bell is on. Off every time a plan screen opens, so it has to be
+- **Bell (ping me)**, above save as image: stays as you set it until the game closes. Starts off every launch.
+- **Team (ping @here)**, above terminal style: only clickable while the bell is on. Off every time a plan screen opens, so it has to be
   switched on for each craft.
 
 Both are greyed out until Discord is set up.

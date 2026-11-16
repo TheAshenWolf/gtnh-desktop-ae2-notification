@@ -20,6 +20,8 @@ import ae2desktopping.client.ToggleIconButton;
 import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.implementations.GuiCraftConfirm;
 import appeng.client.gui.widgets.GuiAeButton;
+import appeng.client.gui.widgets.GuiImgButton;
+import appeng.client.gui.widgets.GuiSimpleImgButton;
 import appeng.container.implementations.ContainerCraftConfirm;
 
 /**
@@ -33,20 +35,18 @@ import appeng.container.implementations.ContainerCraftConfirm;
 @Mixin(GuiCraftConfirm.class)
 public abstract class MixinGuiCraftConfirm extends GuiContainer {
 
-    /** AE2 puts terminal style at guiLeft - 18 and save as image at guiLeft - 36, 18 above the bottom edge. */
-    @Unique
-    private static final int AE2DESKTOPPING$PING_ME_X = -36;
-    @Unique
-    private static final int AE2DESKTOPPING$PING_HERE_X = -18;
-    @Unique
-    private static final int AE2DESKTOPPING$Y_FROM_BOTTOM = 36;
-
     @Shadow(remap = false)
     @Final
     private ContainerCraftConfirm ccc;
 
     @Shadow(remap = false)
     private GuiAeButton startWithFollow;
+
+    @Shadow(remap = false)
+    private GuiSimpleImgButton takeScreenshot;
+
+    @Shadow(remap = false)
+    private GuiImgButton switchTallMode;
 
     @Unique
     private ToggleIconButton ae2desktopping$pingMeButton;
@@ -64,13 +64,37 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
 
     @Inject(method = "initGui", at = @At("TAIL"))
     private void ae2desktopping$addToggles(CallbackInfo callback) {
-        final int y = guiTop + ySize - AE2DESKTOPPING$Y_FROM_BOTTOM;
-
-        ae2desktopping$pingMeButton = new ToggleIconButton(0, guiLeft + AE2DESKTOPPING$PING_ME_X, y, 0, 16);
-        ae2desktopping$pingHereButton = new ToggleIconButton(0, guiLeft + AE2DESKTOPPING$PING_HERE_X, y, 32, 48);
+        ae2desktopping$pingMeButton = new ToggleIconButton(0, 0, 0, 0, 16);
+        ae2desktopping$pingHereButton = new ToggleIconButton(0, 0, 0, 32, 48);
         buttonList.add(ae2desktopping$pingMeButton);
         buttonList.add(ae2desktopping$pingHereButton);
+        ae2desktopping$placeToggles();
         ae2desktopping$refreshToggles();
+    }
+
+    /** AE2 moves "save as image" every frame (list view: guiLeft - 38, tree view: guiLeft - 36), so follow it. */
+    @Inject(method = "drawScreen", at = @At("HEAD"))
+    private void ae2desktopping$followAe2Buttons(int mouseX, int mouseY, float partialTicks, CallbackInfo callback) {
+        ae2desktopping$placeToggles();
+    }
+
+    /**
+     * One row above AE2's pair: the bell over "save as image", @here over "terminal style". The vertical gap is the
+     * same as the horizontal gap between AE2's two buttons.
+     */
+    @Unique
+    private void ae2desktopping$placeToggles() {
+        if (ae2desktopping$pingMeButton == null || takeScreenshot == null || switchTallMode == null) {
+            return;
+        }
+
+        final int gap = switchTallMode.xPosition - (takeScreenshot.xPosition + takeScreenshot.width);
+        final int y = takeScreenshot.yPosition - ae2desktopping$pingMeButton.height - gap;
+
+        ae2desktopping$pingMeButton.xPosition = takeScreenshot.xPosition;
+        ae2desktopping$pingMeButton.yPosition = y;
+        ae2desktopping$pingHereButton.xPosition = switchTallMode.xPosition;
+        ae2desktopping$pingHereButton.yPosition = y;
     }
 
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
