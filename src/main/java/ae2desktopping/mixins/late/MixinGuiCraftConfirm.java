@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import ae2desktopping.AE2DesktopPing;
-import ae2desktopping.client.DiscordFlags;
+import ae2desktopping.client.HereStamps;
 import ae2desktopping.client.PingConfig;
 import ae2desktopping.client.ToggleIconButton;
 import appeng.api.storage.data.IAEStack;
@@ -27,10 +27,11 @@ import appeng.container.implementations.ContainerCraftConfirm;
 /**
  * Two toggles on the crafting plan screen, one row above AE2's "save as image" and "terminal style" buttons:
  * <ul>
- * <li>Ping me on Discord (above save as image): stays as set until the game closes.</li>
+ * <li>Ping me on Discord (above save as image): the bell, saved in the config. Read when a craft finishes, so it covers
+ * every followed craft.</li>
  * <li>Ping @here (above terminal style): needs the first one on; off every time a plan opens.</li>
  * </ul>
- * Every "Start and follow" records the decision for its item and amount, see {@link DiscordFlags#recordFollow}.
+ * Every "Start and follow" records the @here decision for its item and amount, see {@link HereStamps#recordFollow}.
  */
 @Mixin(GuiCraftConfirm.class)
 public abstract class MixinGuiCraftConfirm extends GuiContainer {
@@ -100,8 +101,8 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
     private void ae2desktopping$onButton(GuiButton button, CallbackInfo callback) {
         if (button == ae2desktopping$pingMeButton) {
-            final boolean pingMe = !DiscordFlags.isPingMeToggleOn();
-            DiscordFlags.setPingMeToggle(pingMe);
+            final boolean pingMe = !PingConfig.pingMe;
+            PingConfig.setPingMe(pingMe);
 
             if (!pingMe) {
                 ae2desktopping$pingHere = false;
@@ -113,7 +114,7 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
         }
 
         if (button == ae2desktopping$pingHereButton) {
-            ae2desktopping$pingHere = !ae2desktopping$pingHere && DiscordFlags.isPingMeToggleOn();
+            ae2desktopping$pingHere = !ae2desktopping$pingHere && PingConfig.pingMe;
             ae2desktopping$refreshToggles();
             callback.cancel();
             return;
@@ -123,16 +124,14 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
             return;
         }
 
-        final boolean ready = PingConfig.isDiscordReady();
-        final boolean pingMe = ready && DiscordFlags.isPingMeToggleOn();
-        final boolean pingHere = pingMe && ae2desktopping$pingHere;
+        final boolean pingHere = PingConfig.isDiscordReady() && PingConfig.pingMe && ae2desktopping$pingHere;
         ae2desktopping$pingHere = false;
 
         try {
             final IAEStack<?> output = ccc.getItemToCraft();
-            DiscordFlags.recordFollow(output, pingMe, pingHere);
+            HereStamps.recordFollow(output, pingHere);
         } catch (RuntimeException exception) {
-            AE2DesktopPing.LOG.error("Could not read which item this craft makes; no Discord ping for it.", exception);
+            AE2DesktopPing.LOG.error("Could not read which item this craft makes; no @here ping for it.", exception);
         }
     }
 
@@ -143,7 +142,7 @@ public abstract class MixinGuiCraftConfirm extends GuiContainer {
         }
 
         final boolean ready = PingConfig.isDiscordReady();
-        final boolean pingMe = ready && DiscordFlags.isPingMeToggleOn();
+        final boolean pingMe = ready && PingConfig.pingMe;
 
         if (!pingMe) {
             ae2desktopping$pingHere = false;

@@ -18,10 +18,14 @@ public final class PingConfig {
     public static final String CATEGORY_DESKTOP = "desktop";
     public static final String CATEGORY_DISCORD = "discord";
     private static final String LANG_PREFIX = "ae2desktopping.config.";
+    private static final String PING_ME_KEY = "pingMe";
 
     public static boolean flashTaskbar = true;
     public static boolean windowsNotification = true;
     public static boolean onlyWhenUnfocused = true;
+
+    /** The bell. Saved in the config, so it survives restarts; read when a craft finishes. */
+    public static boolean pingMe;
 
     /** Validated webhook URL, or null when unset or rejected. */
     public static String webhookUrl;
@@ -40,6 +44,14 @@ public final class PingConfig {
 
     public static Configuration getConfiguration() {
         return configuration;
+    }
+
+    /** The bell button on the crafting plan screen: flip it and write it to the file. */
+    public static void setPingMe(boolean on) {
+        pingMe = on;
+        configuration.get(CATEGORY_DISCORD, PING_ME_KEY, false)
+            .set(on);
+        configuration.save();
     }
 
     /** Re-reads the file (for hand edits), then applies it. */
@@ -75,6 +87,12 @@ public final class PingConfig {
             "onlyWhenUnfocused",
             true,
             "Skip desktop alerts while the game has focus.");
+
+        pingMe = bool(
+            CATEGORY_DISCORD,
+            PING_ME_KEY,
+            false,
+            "The bell: ping you for every followed craft that finishes while this is on. Also on the crafting plan screen.");
 
         final String rawWebhook = string(
             CATEGORY_DISCORD,

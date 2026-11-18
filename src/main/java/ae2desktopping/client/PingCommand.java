@@ -73,8 +73,8 @@ public final class PingCommand extends CommandBase {
         sender.addChatMessage(
             new ChatComponentTranslation(
                 "ae2desktopping.chat.status_flags",
-                DiscordFlags.flaggedCount(),
-                DiscordFlags.isPingMeToggleOn() ? "ON" : "OFF"));
+                PingConfig.pingMe ? "ON" : "OFF",
+                HereStamps.count()));
     }
 
     @Override

@@ -86,7 +86,8 @@ public final class ClientTicker {
 
     private static void handle(CraftCompletions.Completion completion) {
         try {
-            final DiscordFlags.Match match = DiscordFlags.consume(completion.stack, completion.count);
+            // Consumed even for a login replay, so the stamp doesn't linger for a later identical craft.
+            final boolean pingHere = HereStamps.consume(completion.stack, completion.count);
 
             if (isLoginReplay(completion)) {
                 return;
@@ -104,12 +105,10 @@ public final class ClientTicker {
                     elapsed),
                 false);
 
-            if (match != DiscordFlags.Match.NONE) {
-                DiscordWebhook.sendCraftFinished(
-                    itemName,
-                    completion.count,
-                    completion.elapsedNanos,
-                    match == DiscordFlags.Match.PING_HERE);
+            // The bell is read now, at finish time, so it covers every followed craft: the plan screen's
+            // Start and follow, the CPU screen's Follow button and Ctrl auto-start alike.
+            if (pingHere || PingConfig.pingMe) {
+                DiscordWebhook.sendCraftFinished(itemName, completion.count, completion.elapsedNanos, pingHere);
             }
         } catch (RuntimeException exception) {
             AE2DesktopPing.LOG.error("Could not handle a finished AE2 craft", exception);
